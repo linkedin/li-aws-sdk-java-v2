@@ -8,7 +8,6 @@ on:
   push:
     branches:
       - master
-      - s3-li-2.23.3
     paths-ignore:
       - '**.md'
       - '.all-contributorsrc'
