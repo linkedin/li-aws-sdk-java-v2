@@ -26,7 +26,7 @@ import software.amazon.awssdk.annotations.SdkInternalApi;
 public final class BucketUtils {
 
     private static final int MIN_BUCKET_NAME_LENGTH = 3;
-    private static final int MAX_BUCKET_NAME_LENGTH = 63;
+    private static final int MAX_BUCKET_NAME_LENGTH = 255;
 
     private static final Pattern IP_ADDRESS_PATTERN = Pattern.compile("(\\d+\\.){3}\\d+");
 
