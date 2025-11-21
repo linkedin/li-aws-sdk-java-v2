@@ -3,9 +3,7 @@ name: Maven Build
 on:
   push:
     branches:
-      - main
-      - master
-      - 's3-li-*'
+     - '**'
   pull_request:
 
 jobs:
