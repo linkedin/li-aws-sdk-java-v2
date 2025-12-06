@@ -22,7 +22,6 @@ import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.internal.BucketUtils;
 import software.amazon.awssdk.services.s3.model.CreateBucketConfiguration;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 
@@ -35,7 +34,6 @@ public final class CreateBucketInterceptor implements ExecutionInterceptor {
 
         if (sdkRequest instanceof CreateBucketRequest) {
             CreateBucketRequest request = (CreateBucketRequest) sdkRequest;
-            validateBucketNameIsS3Compatible(request.bucket());
 
             if (request.createBucketConfiguration() == null) {
                 return addLocationConstraintToRequest(request,
@@ -68,16 +66,4 @@ public final class CreateBucketInterceptor implements ExecutionInterceptor {
         return configuration.copy(c -> c.locationConstraint(region.id()).build());
     }
 
-    /**
-     * Validates that the name of the bucket being requested to be created
-     * is a valid S3 bucket name according to their guidelines. If the bucket
-     * name is not valid, an {@link IllegalArgumentException} is thrown. See
-     * {@link BucketUtils#isValidDnsBucketName(String, boolean)} for additional
-     * details.
-     *
-     * @param bucketName Name of the bucket
-     */
-    private void validateBucketNameIsS3Compatible(String bucketName) {
-        BucketUtils.isValidDnsBucketName(bucketName, true);
-    }
 }
