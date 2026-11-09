@@ -1,0 +1,88 @@
+name: Publish LinkedIn SDK
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact version already committed in the release branch POMs
+        required: true
+        type: string
+      dry_run:
+        description: Build and verify only; do not upload to JFrog
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-linkedin-sdk
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'linkedin/li-aws-sdk-java-v2' && github.ref == 'refs/heads/s3-li-2.23.3'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    environment: jfrog-publish
+    steps:
+      - name: Checkout the selected release-branch commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '11'
+          server-id: central
+          server-username: ARTIFACTORY_USER
+          server-password: ARTIFACTORY_PASSWORD
+          settings-path: ${{ runner.temp }}
+
+      - name: Validate release version and destination
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: python3 .github/scripts/check-linkedin-release.py
+
+      - name: Build and verify the complete SDK reactor
+        run: ./mvnw --batch-mode --no-transfer-progress clean verify
+
+      - name: Recheck publication state after the build
+        if: ${{ !inputs.dry_run }}
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: python3 .github/scripts/check-linkedin-release.py
+
+      - name: Publish the complete SDK reactor
+        if: ${{ !inputs.dry_run }}
+        env:
+          ARTIFACTORY_USER: ${{ secrets.ARTIFACTORY_USER }}
+          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+        run: |
+          if [[ -z "$ARTIFACTORY_USER" || -z "$ARTIFACTORY_PASSWORD" ]]; then
+            echo "::error::Configure ARTIFACTORY_USER and ARTIFACTORY_PASSWORD in the jfrog-publish environment."
+            exit 1
+          fi
+          ./mvnw --batch-mode --no-transfer-progress \
+            --settings "$RUNNER_TEMP/settings.xml" deploy -DskipTests
+
+      - name: Record release result
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          {
+            printf 'Version: `%s`\n\n' "$RELEASE_VERSION"
+            printf 'Source commit: `%s`\n\n' "$GITHUB_SHA"
+            printf 'Dry run: `%s`\n\n' "$DRY_RUN"
+            printf 'Destination: https://linkedin.jfrog.io/artifactory/li-aws-sdk-java-v2\n\n'
+            printf 'ELR import and consumer release cooldown are separate from publication.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove Maven publishing settings
+        if: always()
+        run: rm -f "$RUNNER_TEMP/settings.xml"

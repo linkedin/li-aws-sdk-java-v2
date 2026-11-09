@@ -26,6 +26,8 @@ artifact source.
 
 ## Getting Started
 
+For this fork's release process, see [Publishing the LinkedIn SDK fork](docs/LinkedInPublishing.md).
+
 #### Sign up for AWS ####
 
 Before you begin, you need an AWS account. Please see the [Sign Up for AWS][docs-signup] section of

@@ -7,6 +7,17 @@ on:
   pull_request:
 
 jobs:
+  release-checks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test release preflight without credentials or network
+        run: python3 -m unittest discover -s .github/scripts -p 'test_*.py'
+
   build:
     runs-on: ubuntu-latest
 
