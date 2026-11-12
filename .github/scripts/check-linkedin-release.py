@@ -83,25 +83,12 @@ def validate_fork_versions(path, expected, seen=None):
     return seen
 
 
-def prepare_release(path, run_id, opener=urllib.request.urlopen):
+def prepare_release(path, expected=None, opener=urllib.request.urlopen):
     pom = ET.parse(path).getroot()
-    source = pom.findtext("m:version", namespaces=NAMESPACE) or ""
-    validate_pom(pom, source)
-    paths = validate_fork_versions(path, source)
-    if not re.fullmatch(r"[1-9][0-9]*", run_id):
-        raise ValueError("Expected a positive GitHub run ID for an automatic release.")
-    # A rerun keeps the same version, so partial or completed uploads cannot be retried blindly.
-    version = f"{source.rsplit('.', 1)[0]}.{run_id}"
-    require_unpublished(version, opener)
-    root = path.resolve().parent
-    for module in paths:
-        if not module.is_relative_to(root):
-            raise ValueError(f"Reactor POM is outside the checkout: {module}")
-    for module in paths:
-        content = module.read_text(encoding="utf-8")
-        module.write_text(content.replace(f">{source}<", f">{version}<"), encoding="utf-8")
-    validate_pom(ET.parse(path).getroot(), version)
+    version = pom.findtext("m:version", namespaces=NAMESPACE) if expected is None else expected
+    validate_pom(pom, version or "")
     validate_fork_versions(path, version)
+    require_unpublished(version, opener)
     return version
 
 
@@ -109,7 +96,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--select", action="store_true", help="Select manual runs and merged-PR pushes.")
-    mode.add_argument("--prepare", action="store_true", help="Prepare and output the CI release version.")
+    mode.add_argument("--prepare", action="store_true", help="Validate and output the committed release version.")
     args = parser.parse_args()
     if args.select:
         event = os.environ["GITHUB_EVENT_NAME"]
@@ -121,13 +108,8 @@ def main():
             output.write(f"eligible={str(eligible).lower()}\n")
         print("Release selected." if eligible else "No matching merged release PR; publishing skipped.")
         return
-    if args.prepare and os.environ.get("RELEASE_RUN_ID"):
-        version = prepare_release(Path("pom.xml"), os.environ["RELEASE_RUN_ID"])
-    else:
-        version = os.environ["RELEASE_VERSION"]
-        validate_pom(ET.parse(Path("pom.xml")).getroot(), version)
-        validate_fork_versions(Path("pom.xml"), version)
-        require_unpublished(version)
+    expected = None if args.prepare and os.environ["GITHUB_EVENT_NAME"] == "push" else os.environ["RELEASE_VERSION"]
+    version = prepare_release(Path("pom.xml"), expected)
     if args.prepare:
         with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
             output.write(f"version={version}\n")

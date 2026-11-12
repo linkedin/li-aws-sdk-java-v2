@@ -52,16 +52,16 @@ protection setup before enabling it.
 
 ## Automatic release
 
-Each eligible merge generates a version such as `2.23.3-li-0.<GitHub run ID>`.
-The prefix comes from the source POM; the final numeric component is the immutable
-run ID, not a sequential patch counter. This avoids shared version-bump commits.
-The workflow validates the source reactor and profile POMs, checks that the target
-version is unpublished, and replaces literal fork versions only in those actual
-POMs inside the runner. Archetype templates and repository files are not committed
-or tagged.
+Each release PR must explicitly bump the final integer in the fork version,
+for example `2.23.3-li-0.5` to `2.23.3-li-0.6`, consistently across the actual
+reactor and profile POMs. The workflow publishes the committed version unchanged;
+it does not generate versions, edit POMs, or commit version bumps back to the branch.
+Preflight validates consistency and refuses an already-published version, so a PR
+that retains a published version cannot publish again. Coordinate concurrent
+release PRs so they do not reuse the same version.
 
-The same run ID is used on reruns: a completed or partially uploaded release is
-refused rather than silently creating a new version. After preparation, publication
+Reruns use the same committed version: a completed or partially uploaded release is
+refused rather than silently creating a new version. After validation, publication
 requires a successful full-reactor `clean verify` and another absence check before
 `deploy -DskipTests`. The version and source SHA appear in the run summary.
 Do not merge further release changes blindly after a partial upload; follow the

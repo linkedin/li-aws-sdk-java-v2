@@ -77,11 +77,10 @@ jobs:
           server-password: ARTIFACTORY_PASSWORD
           settings-path: ${{ runner.temp }}
 
-      - name: Prepare and validate release version and destination
+      - name: Validate committed release version and destination
         id: release
         env:
           RELEASE_VERSION: ${{ inputs.version }}
-          RELEASE_RUN_ID: ${{ github.event_name == 'push' && github.run_id || '' }}
         run: python3 .github/scripts/check-linkedin-release.py --prepare
 
       - name: Build and verify the complete SDK reactor
