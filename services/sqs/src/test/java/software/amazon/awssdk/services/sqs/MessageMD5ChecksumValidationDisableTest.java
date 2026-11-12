@@ -29,6 +29,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.http.AbortableInputStream;
 import software.amazon.awssdk.http.HttpExecuteResponse;
 import software.amazon.awssdk.http.SdkHttpResponse;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.internal.MessageMD5ChecksumInterceptor;
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
@@ -64,6 +65,7 @@ public class MessageMD5ChecksumValidationDisableTest {
     public void md5ValidationEnabled_default_md5InResponse_Works() {
         asyncHttpClient.stubResponses(responseWithMd5());
         SqsAsyncClient client = SqsAsyncClient.builder()
+                                              .region(Region.US_EAST_1)
                                               .credentialsProvider(StaticCredentialsProvider.create(CLIENT_CREDENTIALS))
                                               .httpClient(asyncHttpClient)
                                               .build();
@@ -78,6 +80,7 @@ public class MessageMD5ChecksumValidationDisableTest {
     public void md5ValidationEnabled_default_noMd5InResponse_throwsException() {
         asyncHttpClient.stubResponses(responseWithoutMd5());
         SqsAsyncClient client = SqsAsyncClient.builder()
+                                              .region(Region.US_EAST_1)
                                               .credentialsProvider(StaticCredentialsProvider.create(CLIENT_CREDENTIALS))
                                               .httpClient(asyncHttpClient)
                                               .build();
@@ -92,6 +95,7 @@ public class MessageMD5ChecksumValidationDisableTest {
     public void md5ValidationDisabled_md5InResponse_Works() {
         asyncHttpClient.stubResponses(responseWithMd5());
         SqsAsyncClient client = SqsAsyncClient.builder()
+                                              .region(Region.US_EAST_1)
                                               .credentialsProvider(StaticCredentialsProvider.create(CLIENT_CREDENTIALS))
                                               .httpClient(asyncHttpClient)
                                               .checksumValidationEnabled(false)
@@ -107,6 +111,7 @@ public class MessageMD5ChecksumValidationDisableTest {
     public void md5ValidationDisabled_noMd5InResponse_Works() {
         asyncHttpClient.stubResponses(responseWithoutMd5());
         SqsAsyncClient client = SqsAsyncClient.builder()
+                                              .region(Region.US_EAST_1)
                                               .credentialsProvider(StaticCredentialsProvider.create(CLIENT_CREDENTIALS))
                                               .httpClient(asyncHttpClient)
                                               .checksumValidationEnabled(false)
@@ -122,6 +127,7 @@ public class MessageMD5ChecksumValidationDisableTest {
     public void sync_md5ValidationDisabled_noMd5InResponse_Works() {
         syncHttpClient.stubResponses(responseWithoutMd5());
         SqsClient client = SqsClient.builder()
+                                    .region(Region.US_EAST_1)
                                     .credentialsProvider(StaticCredentialsProvider.create(CLIENT_CREDENTIALS))
                                     .httpClient(syncHttpClient)
                                     .checksumValidationEnabled(false)

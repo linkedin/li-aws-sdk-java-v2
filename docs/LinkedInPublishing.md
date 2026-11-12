@@ -1,7 +1,8 @@
 # Publishing the LinkedIn SDK fork
 
-The `Publish LinkedIn SDK` GitHub Actions workflow builds and verifies the complete
-Maven reactor, then optionally deploys it to the existing
+The `Publish LinkedIn SDK` GitHub Actions workflow automatically builds, verifies,
+and deploys the complete Maven reactor after a PR merges into `s3-li-2.23.3`.
+Manual runs remain available and default to dry run. The destination is the existing
 `https://linkedin.jfrog.io/artifactory/li-aws-sdk-java-v2` repository. ELR imports
 the published coordinates into internal Artifactory separately. This is the same
 publish-then-import model used by Ambry, not a direct upload to internal Artifactory.
@@ -12,41 +13,72 @@ publish-then-import model used by Ambry, not a direct upload to internal Artifac
    `s3-li-2.23.3`. The workflow must also be present on the repository's default
    branch (`master`) for GitHub to expose `workflow_dispatch`. Carry over these
    files only; do not merge the fork's release code into upstream master.
-2. Create a GitHub environment named `jfrog-publish`. Require release-owner
-   approval, prevent self-review where available, and restrict deployment branches
-   to `s3-li-2.23.3`. Configure these protections **before enabling real uploads**;
-   naming an environment in YAML does not configure its protections.
+2. Configure the GitHub environment `jfrog-publish` to allow only the branch
+   `s3-li-2.23.3`, not tags. Remove required reviewers to enable the requested
+   unattended publication policy; environment settings are separate from YAML.
+   This also removes the approval gate for manual uploads. Protect the release
+   branch with reviewed PRs before enabling unattended publication: merged code
+   runs with publishing authority, and other workflows on the allowed branch
+   could also reference these environment secrets.
 3. Add environment secrets `ARTIFACTORY_USER` and `ARTIFACTORY_PASSWORD`.
    The identity must have write access to the existing `li-aws-sdk-java-v2`
-   repository. The private-fork guidelines currently document the JFrog profile's
-   **encrypted password**, not an API key, for Maven publication. Obtain it through
-   the approved process; do not paste it into code, logs, or chat.
-   A repository-authorized publisher such as Shan can provision these secrets.
-   They need not be Cris's credentials. Ask publish-platform for a supported
-   automation identity/rotation process rather than assuming a service account
-   or GitHub OIDC is already supported.
+   repository. JFrog's **Set Me Up > Maven > Generate Token & Create Instructions**
+   supplies the Maven username and identity token. Store that username in
+   `ARTIFACTORY_USER` and the token in `ARTIFACTORY_PASSWORD`; the secret name does
+   not require an account password. Do not paste credentials into code, logs, or
+   chat. Revoke exposed tokens and replace the GitHub secret with a fresh token.
+   Assign an owner to rotate credentials before expiry. A personal deploy grant
+   may end before its token expires; replace temporary personal credentials with
+   a publish-platform-approved automation identity. Do not assume service accounts
+   or GitHub OIDC are already provisioned.
 4. Ensure JFrog permissions prohibit overwriting release artifacts. The workflow
    serializes its own uploads and checks representative coordinates for existing
    or partial publication, but cannot atomically exclude another publisher.
 
-No secrets are available to the existing pull-request build. Publishing is manual,
-restricted to this repository and release branch, and uses the dispatch commit's
-immutable SHA. Only the upload step receives JFrog credentials; Maven settings
+No JFrog secrets are available to the existing pull-request build or release-selection
+job. A release-branch push is eligible for automatic publication only if GitHub
+associates its exact SHA with a merged PR targeting that branch in this repository.
+Direct pushes and unmerged or differently targeted PRs do not publish. The workflow
+checks out that immutable push SHA, never the unmerged PR head. Selection needs
+read-only pull-request access; publishing retains read-only contents access.
+Only the upload step receives JFrog credentials; Maven settings
 contain environment references and are deleted at job completion. There is no
 dependency cache in this credentialed workflow.
 
-## Release
+The workflow serializes builds and uploads and queues up to 100 pending runs.
+GitHub cancels additional runs if that queue fills. Merging this workflow change
+can itself trigger an upload, so complete credential rotation and repository
+protection setup before enabling it.
+
+## Automatic release
+
+Each eligible merge generates a version such as `2.23.3-li-0.<GitHub run ID>`.
+The prefix comes from the source POM; the final numeric component is the immutable
+run ID, not a sequential patch counter. This avoids shared version-bump commits.
+The workflow validates the source reactor and profile POMs, checks that the target
+version is unpublished, and replaces literal fork versions only in those actual
+POMs inside the runner. Archetype templates and repository files are not committed
+or tagged.
+
+The same run ID is used on reruns: a completed or partially uploaded release is
+refused rather than silently creating a new version. After preparation, publication
+requires a successful full-reactor `clean verify` and another absence check before
+`deploy -DskipTests`. The version and source SHA appear in the run summary.
+Do not merge further release changes blindly after a partial upload; follow the
+recovery instructions below.
+
+## Manual release or dry run
 
 1. Commit the intended version consistently across the fork's POMs and review
    the release-branch changes. Preflight checks literal fork versions in the actual
    reactor and profile modules, excluding archetype templates and generated POMs.
-   The workflow does not bump versions or create tags.
+   Manual runs require the requested version to match the committed POMs.
 2. In Actions, select **Publish LinkedIn SDK**, choose branch `s3-li-2.23.3`,
    enter the exact version (initially `2.23.3-li-0.5`), and leave `dry_run=true`.
    Confirm the source SHA and successful full-reactor `clean verify`.
-3. Dispatch the same reviewed commit/version with `dry_run=false`, then obtain
-   the environment approval. If the branch moved since the dry run, review the
-   new SHA; both runs build the SHA selected when dispatched.
+3. Dispatch the same reviewed commit/version with `dry_run=false` to upload without
+   a separate environment approval. If the branch moved since the dry run, review
+   the new SHA; both runs build the SHA selected when dispatched.
 4. The workflow checks the root version and destination, refuses representative
    existing release coordinates, runs `clean verify`, then runs `deploy` for the
    complete reactor. The deploy invocation skips unit tests already run by verify.
