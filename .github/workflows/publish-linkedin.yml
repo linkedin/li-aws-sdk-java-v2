@@ -84,6 +84,8 @@ jobs:
         run: python3 .github/scripts/check-linkedin-release.py --prepare
 
       - name: Build and verify the complete SDK reactor
+        env:
+          AWS_REGION: us-east-1
         run: ./mvnw --batch-mode --no-transfer-progress clean verify
 
       - name: Recheck publication state after the build

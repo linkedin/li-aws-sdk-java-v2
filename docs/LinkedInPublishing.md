@@ -64,6 +64,9 @@ Reruns use the same committed version: a completed or partially uploaded release
 refused rather than silently creating a new version. After validation, publication
 requires a successful full-reactor `clean verify` and another absence check before
 `deploy -DskipTests`. The version and source SHA appear in the run summary.
+The verification step supplies `AWS_REGION=us-east-1` for generated client tests
+that require a signing region even when testing custom endpoints; it does not
+provide AWS credentials.
 Do not merge further release changes blindly after a partial upload; follow the
 recovery instructions below.
 

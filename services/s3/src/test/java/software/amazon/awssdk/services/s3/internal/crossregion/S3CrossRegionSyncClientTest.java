@@ -35,6 +35,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
@@ -435,6 +437,8 @@ class S3CrossRegionSyncClientTest {
     private S3ClientBuilder clientBuilder() {
         return S3Client.builder()
                        .httpClient(mockSyncHttpClient)
+                       .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("akid", "skid")))
+                       .region(Region.US_EAST_1)
                        .overrideConfiguration(c -> c.addExecutionInterceptor(captureInterceptor));
     }
 
