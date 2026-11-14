@@ -23,6 +23,8 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ApiName;
 import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
@@ -44,6 +46,7 @@ class MultipartClientUserAgentTest {
         this.userAgentInterceptor = new UserAgentInterceptor();
         s3Client = S3AsyncClient.builder()
                                 .httpClient(mockAsyncHttpClient)
+                                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("akid", "skid")))
                                 .endpointOverride(URI.create("http://localhost"))
                                 .overrideConfiguration(c -> c.addExecutionInterceptor(userAgentInterceptor))
                                 .multipartConfiguration(c -> c.minimumPartSizeInBytes(512L).thresholdInBytes(512L))

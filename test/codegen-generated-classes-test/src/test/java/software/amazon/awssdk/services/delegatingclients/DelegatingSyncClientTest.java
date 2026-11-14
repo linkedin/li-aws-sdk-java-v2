@@ -23,11 +23,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.http.AbortableInputStream;
 import software.amazon.awssdk.http.HttpExecuteResponse;
 import software.amazon.awssdk.http.SdkHttpRequest;
 import software.amazon.awssdk.http.SdkHttpResponse;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.protocolrestjson.DelegatingProtocolRestJsonAsyncClient;
 import software.amazon.awssdk.services.protocolrestjson.DelegatingProtocolRestJsonClient;
 import software.amazon.awssdk.services.protocolrestjson.ProtocolRestJsonAsyncClient;
@@ -49,6 +52,9 @@ public class DelegatingSyncClientTest {
 
     MockSyncHttpClient mockSyncHttpClient = new MockSyncHttpClient();
     ProtocolRestJsonClient defaultClient = ProtocolRestJsonClient.builder()
+                                                                 .region(Region.US_EAST_1)
+                                                                 .credentialsProvider(StaticCredentialsProvider.create(
+                                                                     AwsBasicCredentials.create("akid", "skid")))
                                                                  .httpClient(mockSyncHttpClient)
                                                                  .endpointOverride(URI.create("http://localhost"))
                                                                  .build();

@@ -27,6 +27,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.crt.Log;
 import software.amazon.awssdk.regions.Region;
@@ -65,6 +67,8 @@ public class CrtDownloadErrorTest {
                                         .endpointOverride(URI.create("http://localhost:" + WM.port()))
                                         .forcePathStyle(true)
                                         .region(Region.US_EAST_1)
+                                        .credentialsProvider(StaticCredentialsProvider.create(
+                                            AwsBasicCredentials.create("akid", "skid")))
                                         .build();
 
         String path = String.format("/%s/%s", BUCKET, KEY);
@@ -99,6 +103,7 @@ public class CrtDownloadErrorTest {
                           .endpointOverride(URI.create("http://localhost:" + WM.port()))
                           .forcePathStyle(true)
                           .region(Region.US_EAST_1)
+                          .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("akid", "skid")))
                           .build();
 
         String path = String.format("/%s/%s", BUCKET, KEY);
@@ -129,6 +134,7 @@ public class CrtDownloadErrorTest {
                           .endpointOverride(URI.create("http://localhost:" + WM.port()))
                           .forcePathStyle(true)
                           .region(Region.US_EAST_1)
+                          .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("akid", "skid")))
                           .build();
 
         String path = String.format("/%s/%s", BUCKET, KEY);

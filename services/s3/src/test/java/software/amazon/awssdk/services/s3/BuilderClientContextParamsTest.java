@@ -30,9 +30,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
 import software.amazon.awssdk.core.interceptor.SdkInternalExecutionAttribute;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.endpoints.S3ClientContextParams;
 import software.amazon.awssdk.utils.AttributeMap;
 
@@ -62,6 +65,8 @@ public class BuilderClientContextParamsTest {
     @ParameterizedTest
     public void verifyParams(TestCase tc) {
         S3ClientBuilder builder = S3Client.builder()
+            .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("akid", "skid")))
+            .region(Region.US_EAST_1)
             .overrideConfiguration(o -> o.addExecutionInterceptor(mockInterceptor));
 
         if (tc.config() != null) {

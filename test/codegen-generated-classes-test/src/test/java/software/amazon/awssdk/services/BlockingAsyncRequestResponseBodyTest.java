@@ -42,6 +42,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.commons.lang.RandomStringUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -77,6 +78,17 @@ public class BlockingAsyncRequestResponseBodyTest {
                                             .credentialsProvider(AnonymousCredentialsProvider.create())
                                             .endpointOverride(URI.create("http://localhost:" + wireMock.port()))
                                             .build();
+    }
+
+    @AfterEach
+    public void teardown() {
+        try {
+            if (client != null) {
+                client.close();
+            }
+        } finally {
+            wireMock.stop();
+        }
     }
 
     @Test
