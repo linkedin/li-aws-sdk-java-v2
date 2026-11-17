@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.auth.signer.AwsS3V4Signer;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
@@ -29,6 +31,7 @@ import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
 import software.amazon.awssdk.core.interceptor.SdkInternalExecutionAttribute;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.DelegatingS3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.endpoints.S3ClientContextParams;
@@ -39,7 +42,11 @@ class DefaultS3CrtAsyncClientTest {
 
     @Test
     void requestSignerOverrideProvided_shouldThrowException() {
-        try (S3AsyncClient s3AsyncClient = S3CrtAsyncClient.builder().build()) {
+        try (S3AsyncClient s3AsyncClient = S3CrtAsyncClient.builder()
+                                                            .region(Region.US_EAST_1)
+                                                            .credentialsProvider(StaticCredentialsProvider.create(
+                                                                AwsBasicCredentials.create("akid", "skid")))
+                                                            .build()) {
             assertThatThrownBy(() -> s3AsyncClient.getObject(
                 b -> b.bucket("bucket").key("key").overrideConfiguration(o -> o.signer(AwsS3V4Signer.create())),
                 AsyncResponseTransformer.toBytes()).join()).hasCauseInstanceOf(UnsupportedOperationException.class);
@@ -69,6 +76,9 @@ class DefaultS3CrtAsyncClientTest {
 
         try (S3AsyncClient s3AsyncClient = builder.accelerate(false)
                                                   .forcePathStyle(true)
+                                                  .region(Region.US_EAST_1)
+                                                  .credentialsProvider(StaticCredentialsProvider.create(
+                                                      AwsBasicCredentials.create("akid", "skid")))
                                                   .build()) {
 
             assertThatThrownBy(s3AsyncClient.listBuckets()::join).hasMessageContaining("BOOM");

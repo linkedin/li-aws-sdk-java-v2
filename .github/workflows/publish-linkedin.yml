@@ -1,6 +1,9 @@
 name: Publish LinkedIn SDK
 
 on:
+  push:
+    branches:
+      - s3-li-2.23.3
   workflow_dispatch:
     inputs:
       version:
@@ -19,10 +22,41 @@ permissions:
 concurrency:
   group: publish-linkedin-sdk
   cancel-in-progress: false
+  queue: max
 
 jobs:
-  publish:
+  select:
     if: github.repository == 'linkedin/li-aws-sdk-java-v2' && github.ref == 'refs/heads/s3-li-2.23.3'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      eligible: ${{ steps.trigger.outputs.eligible }}
+    steps:
+      - name: Checkout the selected release-branch commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Select manual runs or an exact merged PR commit
+        id: trigger
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            gh api --paginate --slurp --method GET \
+              "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" -f per_page=100 \
+              > "$RUNNER_TEMP/release-pulls.json"
+            python3 .github/scripts/check-linkedin-release.py --select < "$RUNNER_TEMP/release-pulls.json"
+          else
+            python3 .github/scripts/check-linkedin-release.py --select
+          fi
+
+  publish:
+    needs: select
+    if: needs.select.outputs.eligible == 'true' && github.repository == 'linkedin/li-aws-sdk-java-v2' && github.ref == 'refs/heads/s3-li-2.23.3'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     environment: jfrog-publish
@@ -43,22 +77,25 @@ jobs:
           server-password: ARTIFACTORY_PASSWORD
           settings-path: ${{ runner.temp }}
 
-      - name: Validate release version and destination
+      - name: Validate committed release version and destination
+        id: release
         env:
           RELEASE_VERSION: ${{ inputs.version }}
-        run: python3 .github/scripts/check-linkedin-release.py
+        run: python3 .github/scripts/check-linkedin-release.py --prepare
 
       - name: Build and verify the complete SDK reactor
+        env:
+          AWS_REGION: us-east-1
         run: ./mvnw --batch-mode --no-transfer-progress clean verify
 
       - name: Recheck publication state after the build
-        if: ${{ !inputs.dry_run }}
+        if: ${{ github.event_name == 'push' || !inputs.dry_run }}
         env:
-          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: python3 .github/scripts/check-linkedin-release.py
 
       - name: Publish the complete SDK reactor
-        if: ${{ !inputs.dry_run }}
+        if: ${{ github.event_name == 'push' || !inputs.dry_run }}
         env:
           ARTIFACTORY_USER: ${{ secrets.ARTIFACTORY_USER }}
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
@@ -72,8 +109,8 @@ jobs:
 
       - name: Record release result
         env:
-          RELEASE_VERSION: ${{ inputs.version }}
-          DRY_RUN: ${{ inputs.dry_run }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
         run: |
           {
             printf 'Version: `%s`\n\n' "$RELEASE_VERSION"

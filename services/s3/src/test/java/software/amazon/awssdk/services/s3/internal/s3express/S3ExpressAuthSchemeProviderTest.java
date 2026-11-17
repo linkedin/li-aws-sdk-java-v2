@@ -21,7 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.AwsExecutionAttribute;
 import software.amazon.awssdk.core.SelectedAuthScheme;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
@@ -69,7 +70,8 @@ class S3ExpressAuthSchemeProviderTest {
         executionAttributes.putAttribute(SdkInternalExecutionAttribute.AUTH_SCHEMES, authSchemesWithS3Express());
         executionAttributes.putAttribute(SdkInternalExecutionAttribute.IDENTITY_PROVIDERS,
                                          DefaultIdentityProviders.builder()
-                                                                 .putIdentityProvider(DefaultCredentialsProvider.create())
+                                                                 .putIdentityProvider(StaticCredentialsProvider.create(
+                                                                     AwsBasicCredentials.create("akid", "skid")))
                                                                  .build());
         return executionAttributes;
     }

@@ -44,11 +44,14 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.reactivestreams.Subscriber;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.ContentStreamProvider;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.protocolrestjson.ProtocolRestJsonAsyncClient;
 import software.amazon.awssdk.services.protocolrestjson.ProtocolRestJsonClient;
 import software.amazon.awssdk.services.protocolrestjson.model.StreamingInputOperationChunkedEncodingRequest;
@@ -61,6 +64,9 @@ public final class TransferEncodingChunkedFunctionalTests {
     public void apacheClientStreamingOperation_withoutContentLength_addsTransferEncodingDoesNotAddContentLength() {
         stubSuccessfulResponse();
         try (ProtocolRestJsonClient client = ProtocolRestJsonClient.builder()
+                                                                   .region(Region.US_EAST_1)
+                                                                   .credentialsProvider(StaticCredentialsProvider.create(
+                                                                       AwsBasicCredentials.create("akid", "skid")))
                                                                    .httpClient(ApacheHttpClient.builder().build())
                                                                    .endpointOverride(URI.create("http://localhost:" + wireMock.port()))
                                                                    .build()) {
@@ -77,6 +83,9 @@ public final class TransferEncodingChunkedFunctionalTests {
     public void nettyClientStreamingOperation_withoutContentLength_addsTransferEncodingDoesNotAddContentLength() {
         stubSuccessfulResponse();
         try (ProtocolRestJsonAsyncClient client = ProtocolRestJsonAsyncClient.builder()
+                                                                             .region(Region.US_EAST_1)
+                                                                             .credentialsProvider(StaticCredentialsProvider.create(
+                                                                                 AwsBasicCredentials.create("akid", "skid")))
                                                                              .httpClient(NettyNioAsyncHttpClient.create())
                                                                              .endpointOverride(URI.create("http://localhost:" + wireMock.port()))
                                                                              .build()) {

@@ -959,6 +959,8 @@ public class S3PresignerTest {
     private S3Presigner presignerForS3Express(boolean disableS3ExpressSessionAuth, S3Client s3Client) {
         return S3Presigner.builder()
                           .s3Client(s3Client)
+                          .region(Region.US_EAST_1)
+                          .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("akid", "skid")))
                           .disableS3ExpressSessionAuth(disableS3ExpressSessionAuth)
                           .build();
     }

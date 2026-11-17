@@ -270,6 +270,7 @@ public class EarlyResponseResetTest {
     @Test
     public void http1EmptyBodyRequest_isNotAffected() throws Exception {
         CopyOnWriteArrayList<FullHttpRequest> received = new CopyOnWriteArrayList<>();
+        CountDownLatch requestReceived = new CountDownLatch(1);
         ServerSocketChannel http1Server = (ServerSocketChannel) new ServerBootstrap()
             .channel(NioServerSocketChannel.class)
             .group(serverGroup)
@@ -282,6 +283,7 @@ public class EarlyResponseResetTest {
                         public void channelRead(ChannelHandlerContext ctx, Object msg) {
                             FullHttpRequest request = (FullHttpRequest) msg;
                             received.add(request.retainedDuplicate());
+                            requestReceived.countDown();
                             request.release();
                             FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,
                                                                                     HttpResponseStatus.NOT_FOUND);
@@ -305,6 +307,9 @@ public class EarlyResponseResetTest {
                                                    .build())
                        .get(5, TimeUnit.SECONDS);
 
+            assertThat(requestReceived.await(5, TimeUnit.SECONDS)).isTrue();
+            assertThat(handler.responseComplete.await(5, TimeUnit.SECONDS)).isTrue();
+            assertThat(handler.statusCode).isEqualTo(404);
             assertThat(handler.errors).isEmpty();
             assertThat(received).hasSize(1);
             assertThat(received.get(0).content().readableBytes()).isZero();
@@ -380,9 +385,11 @@ public class EarlyResponseResetTest {
         private final List<Throwable> errors = new CopyOnWriteArrayList<>();
         private final CountDownLatch responseComplete = new CountDownLatch(1);
         private final CountDownLatch errored = new CountDownLatch(1);
+        private volatile int statusCode;
 
         @Override
         public void onHeaders(SdkHttpResponse headers) {
+            statusCode = headers.statusCode();
         }
 
         @Override

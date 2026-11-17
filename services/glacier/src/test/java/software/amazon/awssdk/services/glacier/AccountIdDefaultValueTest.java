@@ -18,10 +18,8 @@ package software.amazon.awssdk.services.glacier;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.any;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import java.net.URI;
@@ -57,21 +55,21 @@ public class AccountIdDefaultValueTest {
 
     @Test
     public void noAccountIdProvided_DefaultsToHyphen() {
-        stubFor(any(urlMatching(".*"))
-                        .willReturn(aResponse()
-                                            .withStatus(200)
-                                            .withBody("{}")));
+        mockServer.stubFor(any(urlMatching(".*"))
+                               .willReturn(aResponse()
+                                               .withStatus(200)
+                                               .withBody("{}")));
         glacier.listVaults(ListVaultsRequest.builder().build());
-        verify(getRequestedFor(urlEqualTo("/-/vaults")));
+        mockServer.verify(getRequestedFor(urlEqualTo("/-/vaults")));
     }
 
     @Test
     public void accountIdProvided_DoesNotChangeValue() {
-        stubFor(any(urlMatching(".*"))
-                        .willReturn(aResponse()
-                                            .withStatus(200)
-                                            .withBody("{}")));
+        mockServer.stubFor(any(urlMatching(".*"))
+                               .willReturn(aResponse()
+                                               .withStatus(200)
+                                               .withBody("{}")));
         glacier.listVaults(ListVaultsRequest.builder().accountId("1234").build());
-        verify(getRequestedFor(urlEqualTo("/1234/vaults")));
+        mockServer.verify(getRequestedFor(urlEqualTo("/1234/vaults")));
     }
 }
