@@ -77,7 +77,7 @@ recovery instructions below.
    reactor and profile modules, excluding archetype templates and generated POMs.
    Manual runs require the requested version to match the committed POMs.
 2. In Actions, select **Publish LinkedIn SDK**, choose branch `s3-li-2.23.3`,
-   enter the exact version (initially `2.23.3-li-0.5`), and leave `dry_run=true`.
+   enter the exact committed version, and leave `dry_run=true`.
    Confirm the source SHA and successful full-reactor `clean verify`.
 3. Dispatch the same reviewed commit/version with `dry_run=false` to upload without
    a separate environment approval. If the branch moved since the dry run, review
@@ -100,7 +100,7 @@ recovery instructions below.
 
 ```bash
 python3 -m unittest discover -s .github/scripts -p 'test_*.py'
-RELEASE_VERSION=2.23.3-li-0.5 python3 .github/scripts/check-linkedin-release.py
+RELEASE_VERSION=2.23.3-li-0.6 python3 .github/scripts/check-linkedin-release.py
 ```
 
 The second command makes read-only requests to JFrog; it never uploads artifacts.
