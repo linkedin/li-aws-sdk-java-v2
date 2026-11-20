@@ -1,0 +1,6 @@
+{
+    "type": "bugfix",
+    "category": "AWS SDK for Java v2",
+    "description": "Map connection reset and aborted socket exceptions in NettyUtils to decorate closed channel exceptions across operating systems",
+    "contributor": "reginaldalfret"
+}
