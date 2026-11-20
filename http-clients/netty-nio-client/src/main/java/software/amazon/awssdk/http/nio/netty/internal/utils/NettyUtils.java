@@ -40,6 +40,7 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -92,10 +93,17 @@ public final class NettyUtils {
     }
 
     private static boolean isConnectionResetException(Throwable originalCause) {
+        if (!(originalCause instanceof IOException)) {
+            return false;
+        }
         String message = originalCause.getMessage();
-        return originalCause instanceof IOException &&
-               message != null &&
-               message.contains("Connection reset by peer");
+        if (message == null) {
+            return false;
+        }
+        String lowerMessage = message.toLowerCase(Locale.ENGLISH);
+        return lowerMessage.contains("connection reset") ||
+               lowerMessage.contains("forcibly closed by the remote host") ||
+               lowerMessage.contains("connection was aborted");
     }
 
     private static boolean isAcquireTimeoutException(Throwable originalCause) {

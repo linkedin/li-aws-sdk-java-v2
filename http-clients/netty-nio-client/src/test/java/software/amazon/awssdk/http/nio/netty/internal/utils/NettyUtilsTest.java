@@ -38,6 +38,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 import java.io.IOException;
+import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 import java.time.Duration;
 import java.util.concurrent.TimeoutException;
@@ -377,5 +378,49 @@ public class NettyUtilsTest {
 
         assertThat(output).isInstanceOf(IOException.class);
         assertThat(output.getCause()).isNull();
+    }
+
+    @Test
+    public void decorateException_with_SocketException_connectionReset() {
+        Channel channel = mock(Channel.class);
+        Throwable connectionResetException = new SocketException("Connection reset");
+        Throwable output = NettyUtils.decorateException(channel, connectionResetException);
+
+        assertThat(output).isInstanceOf(IOException.class);
+        assertThat(output.getCause()).isSameAs(connectionResetException);
+        assertThat(output.getMessage()).contains(NettyUtils.CLOSED_CHANNEL_ERROR_MESSAGE);
+    }
+
+    @Test
+    public void decorateException_with_IOException_forciblyClosed() {
+        Channel channel = mock(Channel.class);
+        Throwable forciblyClosedException = new IOException("An existing connection was forcibly closed by the remote host");
+        Throwable output = NettyUtils.decorateException(channel, forciblyClosedException);
+
+        assertThat(output).isInstanceOf(IOException.class);
+        assertThat(output.getCause()).isSameAs(forciblyClosedException);
+        assertThat(output.getMessage()).contains(NettyUtils.CLOSED_CHANNEL_ERROR_MESSAGE);
+    }
+
+    @Test
+    public void decorateException_with_IOException_lowercaseReset() {
+        Channel channel = mock(Channel.class);
+        Throwable lowerCaseResetException = new IOException("read error: connection reset");
+        Throwable output = NettyUtils.decorateException(channel, lowerCaseResetException);
+
+        assertThat(output).isInstanceOf(IOException.class);
+        assertThat(output.getCause()).isSameAs(lowerCaseResetException);
+        assertThat(output.getMessage()).contains(NettyUtils.CLOSED_CHANNEL_ERROR_MESSAGE);
+    }
+
+    @Test
+    public void decorateException_with_IOException_connectionAborted() {
+        Channel channel = mock(Channel.class);
+        Throwable connectionAbortedException = new IOException("An established connection was aborted by the software in your host machine");
+        Throwable output = NettyUtils.decorateException(channel, connectionAbortedException);
+
+        assertThat(output).isInstanceOf(IOException.class);
+        assertThat(output.getCause()).isSameAs(connectionAbortedException);
+        assertThat(output.getMessage()).contains(NettyUtils.CLOSED_CHANNEL_ERROR_MESSAGE);
     }
 }
