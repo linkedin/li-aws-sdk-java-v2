@@ -83,6 +83,14 @@ jobs:
           RELEASE_VERSION: ${{ inputs.version }}
         run: python3 .github/scripts/check-linkedin-release.py --prepare
 
+      # Some unit tests build clients through the default credentials chain.
+      # Use a fake profile file rather than env vars so the credential-provider
+      # tests, which control env vars and system properties, are unaffected.
+      - name: Configure fake AWS credentials for unit tests
+        run: |
+          mkdir -p ~/.aws
+          printf '[default]\naws_access_key_id = test-access-key\naws_secret_access_key = test-secret-key\n' > ~/.aws/credentials
+
       - name: Build and verify the complete SDK reactor
         env:
           AWS_REGION: us-east-1
