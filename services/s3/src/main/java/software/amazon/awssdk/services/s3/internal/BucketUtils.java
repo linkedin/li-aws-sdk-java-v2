@@ -26,7 +26,7 @@ import software.amazon.awssdk.annotations.SdkInternalApi;
 public final class BucketUtils {
 
     private static final int MIN_BUCKET_NAME_LENGTH = 3;
-    private static final int MAX_BUCKET_NAME_LENGTH = 63;
+    private static final int MAX_BUCKET_NAME_LENGTH = 255;
 
     private static final Pattern IP_ADDRESS_PATTERN = Pattern.compile("(\\d+\\.){3}\\d+");
 
@@ -75,12 +75,6 @@ public final class BucketUtils {
         for (int i = 0; i < bucketName.length(); ++i) {
             char next = bucketName.charAt(i);
 
-            if (next >= 'A' && next <= 'Z') {
-                return exception(
-                    throwOnError,
-                    "Bucket name should not contain uppercase characters"
-                );
-            }
 
             if (next == ' ' || next == '\t' || next == '\r' || next == '\n') {
                 return exception(
@@ -90,12 +84,6 @@ public final class BucketUtils {
             }
 
             if (next == '.') {
-                if (previous == '\0') {
-                    return exception(
-                        throwOnError,
-                        "Bucket name should not begin with a period"
-                    );
-                }
                 if (previous == '.') {
                     return exception(
                         throwOnError,
@@ -109,18 +97,7 @@ public final class BucketUtils {
                     );
                 }
             } else if (next == '-') {
-                if (previous == '.') {
-                    return exception(
-                        throwOnError,
-                        "Bucket name should not contain dashes next to periods"
-                    );
-                }
-                if (previous == '\0') {
-                    return exception(
-                        throwOnError,
-                        "Bucket name should not begin with a '-'"
-                    );
-                }
+                continue;
             } else if ((next < '0')
                        || (next > '9' && next < 'a')
                        || (next > 'z')) {
@@ -132,13 +109,6 @@ public final class BucketUtils {
             }
 
             previous = next;
-        }
-
-        if (previous == '.' || previous == '-') {
-            return exception(
-                throwOnError,
-                "Bucket name should not end with '-' or '.'"
-            );
         }
 
         return true;

@@ -20,11 +20,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.Test;
 import software.amazon.awssdk.auth.token.credentials.StaticTokenProvider;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.testutils.service.AwsIntegrationTestBase;
 import software.amazon.awssdk.testutils.service.http.MockAsyncHttpClient;
 import software.amazon.awssdk.testutils.service.http.MockSyncHttpClient;
 
-public class BearerCredentialTest extends AwsIntegrationTestBase {
+public class BearerCredentialTest {
     @Test
     public void syncClientSendsBearerToken() {
         try (MockSyncHttpClient httpClient = new MockSyncHttpClient();
