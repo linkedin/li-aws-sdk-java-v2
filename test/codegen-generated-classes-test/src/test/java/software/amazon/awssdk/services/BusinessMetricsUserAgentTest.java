@@ -251,8 +251,8 @@ class BusinessMetricsUserAgentTest {
         String userAgent = assertAndGetUserAgentString();
         assertThat(userAgent).contains("AmazonProtocolRestJson#" + ServiceVersionInfo.VERSION);
         String version = ServiceVersionInfo.VERSION;
-        assertThat(ServiceVersionInfo.VERSION.endsWith(".x") ||
-                   ServiceVersionInfo.VERSION.endsWith(".x-SNAPSHOT")).isTrue();
+        // LinkedIn fork versions carry a "-li-X.Y" qualifier (e.g. 2.49.x-li-0.1)
+        assertThat(ServiceVersionInfo.VERSION).matches("\\d+\\.\\d+\\.x(-li-\\d+\\.\\d+)?(-SNAPSHOT)?");
     }
 
 }
